@@ -144,11 +144,12 @@ function openRoomDialog(room=null){const form=$('#room-add-form'),dialog=$('#roo
 $('#room-add-form')?.addEventListener('submit',async e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));const editing=data.editing_room_number;delete data.editing_room_number;data.capacity=Number(data.capacity||0);data.occupied_seats=Number(data.occupied_seats||0);data.benches=Number(data.benches||0);const payload={room_number:data.room_number,room_name:data.room_name,category:data.category,floor:data.floor,capacity:data.capacity,benches:data.benches,occupied_seats:data.occupied_seats,projector:data.projector,board:data.board,internet:data.network,other_resources:data.resources||'',status:data.status};try{const session=await tryApi('/api/session');if(!session?.profile?.id||session.profile.role!=='faculty')throw Error('Sign in as faculty before saving a room.');let saved;if(editing){const existing=roomDirectory.find(r=>r.room_number===editing);if(!existing?.id)throw Error('The selected room is not loaded from the live database. Refresh live room data first.');saved=await tryApi(`/api/rooms/${existing.id}`,{method:'PATCH',body:JSON.stringify(payload)});}else{saved=await tryApi('/api/rooms',{method:'POST',body:JSON.stringify(payload)});}e.target.reset();$('#room-add-dialog')?.close();toast(`${saved.room_number} · ${editing?'updated':'added'} successfully.`);await loadLiveRooms();loadConnectMapRooms();loadConnectDashboard();}catch(err){toast(err.message||'Room could not be saved.');}});
 function showRoomDetail(r){const detail=$('#c-room-detail');if(detail){detail.innerHTML=`<b>${escOp(r.room_number)} · ${escOp(r.room_name)}</b><p>${escOp(r.category)} · capacity ${escOp(r.capacity)} · occupied ${escOp(r.occupied_seats)} · status ${escOp(r.status)}.</p><p>Equipment: ${escOp(r.projector)}, ${escOp(r.board)}, ${escOp(r.internet||r.network)}. Recommended next action: ${r.status==='Attention'?'Open a maintenance check.':r.status==='Unavailable'?'Keep out of booking until cleared.':'Use this room for the next compatible allocation.'}</p>`;detail.scrollIntoView({behavior:'smooth',block:'center'});}else toast(`${r.room_name} — ${r.status}`);}
 
-function openCrudDialog(id,mode,row=null){
+async function openCrudDialog(id,mode,row=null){
  const dialog=$('#'+id); if(!dialog)return;
  const form=dialog.querySelector('form'); if(!form)return;
  form.reset();
  if(mode==='timetable'){
+   await loadLiveRooms();
    const rooms=roomDirectory||[];
    const roomSel=form.elements.room, subjectSel=form.elements.subject;
    roomSel.innerHTML='<option value="">Choose room</option>'+rooms.map(r=>'<option value="'+escOp(r.room_number)+'">'+escOp(r.room_number)+' · '+escOp(r.room_name)+'</option>').join('');
