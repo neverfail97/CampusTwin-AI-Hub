@@ -363,37 +363,55 @@ def optimize_room():
         return error("Enter a day, valid time range, and student count.")
 
     db = client()
-    rooms_data = db.table("rooms").select("*").execute().data
-    entries = db.table("timetable").select("room_id,start_time,end_time,section,faculty_id").eq("day", day).execute().data
-    issues_data = [issue for issue in db.table("issues").select("room_id,title,status,priority").execute().data if issue["status"] not in ("Resolved", "Verified") ]
+    rooms_data = db.table("rooms").select("*").execute().data or []
+    entries = db.table("timetable").select("room_id,start_time,end_time,section,faculty_id").eq("day", day).execute().data or []
+    issues_data = [issue for issue in (db.table("issues").select("room_id,title,status,priority").execute().data or []) if issue.get("status") not in ("Resolved", "Verified")]
     active_issues = {}
     for issue in issues_data:
-        active_issues.setdefault(issue["room_id"], []).append(issue)
+        if issue.get("room_id"):
+            active_issues.setdefault(issue["room_id"], []).append(issue)
+    want_projector = str(data.get("projector", "")).lower() in ("1", "true", "yes", "on")
+    want_network = str(data.get("network", "")).lower() in ("1", "true", "yes", "on")
+    want_board = str(data.get("board", "")).lower() in ("1", "true", "yes", "on")
+    request_start, request_end = _minutes(start_time), _minutes(end_time)
     recommendations, rejected = [], []
 
     for room in rooms_data:
         reasons = []
-        conflicts = [entry for entry in entries if entry["room_id"] == room["id"] and entry["start_time"] < end_time and entry["end_time"] > start_time]
-        if room["status"] != "Available": reasons.append(f"room status is {room['status'].lower()}")
-        if room["capacity"] < students: reasons.append(f"capacity is {room['capacity']}, below the required {students}")
-        if data.get("projector") and room["projector"] != "Available": reasons.append("projector is unavailable")
-        if data.get("network") and room["internet"] != "Available": reasons.append("network is unavailable")
-        if data.get("board") and room["board"] not in ("Available", "Whiteboard", "Smart Board"): reasons.append("board is unavailable")
+        conflicts = []
+        for entry in entries:
+            if entry.get("room_id") != room.get("id"):
+                continue
+            entry_start, entry_end = _minutes(entry.get("start_time")), _minutes(entry.get("end_time"))
+            if None not in (entry_start, entry_end, request_start, request_end) and entry_start < request_end and entry_end > request_start:
+                conflicts.append(entry)
+        if str(room.get("status", "")).strip().lower() != "available":
+            reasons.append(f"room status is {str(room.get('status', 'unknown')).lower()}")
+        if int(room.get("capacity") or 0) < students:
+            reasons.append(f"capacity is {room.get('capacity', 0)}, below the required {students}")
+        projector = str(room.get("projector", "")).strip().lower()
+        network = str(room.get("internet") or room.get("network") or "").strip().lower()
+        board = str(room.get("board", "")).strip().lower()
+        if want_projector and projector != "available": reasons.append("projector is unavailable")
+        if want_network and network not in ("available", "good"): reasons.append("network is unavailable")
+        if want_board and board not in ("available", "whiteboard", "smart board"): reasons.append("board is unavailable")
         if conflicts: reasons.append("has a timetable conflict")
-        if active_issues.get(room["id"]): reasons.append("has an unresolved maintenance issue")
+        if active_issues.get(room.get("id")): reasons.append("has an unresolved maintenance issue")
         if reasons:
-            rejected.append({"room_number": room["room_number"], "room_name": room["room_name"], "reasons": reasons})
+            rejected.append({"room_number": room.get("room_number"), "room_name": room.get("room_name"), "reasons": reasons})
             continue
-        spare = room["capacity"] - students
-        score = 100 - min(spare, 60) * 0.45 - min(room["occupied_seats"], 80) * 0.05
-        if room["category"] == "Classroom":
-            score += 15  # Prefer teaching-ready classroom space over a laboratory when both fit.
-        suitability = [f"{room['capacity']} seats for {students} students", "Available status", "no timetable conflict"]
-        if data.get("projector"): suitability.append("projector available")
-        if data.get("network"): suitability.append("network available")
-        if data.get("board"): suitability.append("board available")
-        if room["category"] == "Classroom": suitability.append("teaching-ready classroom setting")
-        recommendations.append({"room_id":room["id"], "room_number":room["room_number"], "room_name":room["room_name"], "category":room["category"], "capacity":room["capacity"], "occupied_seats":room["occupied_seats"], "score":round(max(score, 0), 1), "reasons":suitability})
+        capacity = int(room.get("capacity") or 0)
+        occupied = int(room.get("occupied_seats") or 0)
+        spare = max(capacity - students, 0)
+        score = 100 - min(spare, 60) * 0.45 - min(occupied, 80) * 0.05
+        if str(room.get("category", "")).strip().lower() == "classroom":
+            score += 15
+        suitability = [f"{capacity} seats for {students} students", "Available status", "no timetable conflict"]
+        if want_projector: suitability.append("projector available")
+        if want_network: suitability.append("network available")
+        if want_board: suitability.append("board available")
+        if str(room.get("category", "")).strip().lower() == "classroom": suitability.append("teaching-ready classroom setting")
+        recommendations.append({"room_id":room.get("id"), "room_number":room.get("room_number"), "room_name":room.get("room_name"), "category":room.get("category"), "capacity":capacity, "occupied_seats":occupied, "score":round(max(score, 0), 1), "reasons":suitability})
     recommendations.sort(key=lambda room: room["score"], reverse=True)
     return jsonify({"recommendations": recommendations[:3], "rejected": rejected[:5], "analysis": f"Evaluated {len(rooms_data)} campus spaces against capacity, equipment, status, maintenance and timetable constraints."})
 
