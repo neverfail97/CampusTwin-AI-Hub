@@ -601,8 +601,6 @@ def update_timetable(timetable_id):
     if not existing:
         return error("Timetable entry not found.", 404)
     current = existing[0]
-    if current.get("faculty_id") and current.get("faculty_id") != profile["id"]:
-        return error("You can only edit timetable entries owned by your faculty profile.", 403)
 
     data = request.get_json() or {}
     fields = ("day", "day_order", "start_time", "end_time", "room_id", "section", "subject_id")
@@ -733,8 +731,6 @@ def update_progress(progress_id):
     topics=str(data.get("topics_covered",current["topics_covered"])).strip()
     subject=client().table("subjects").select("faculty_id").eq("id",subject_id).execute().data
     if not subject: return error("Subject not found in the live syllabus catalog.",404)
-    if subject[0].get("faculty_id") and subject[0]["faculty_id"] != profile["id"]:
-        return error("Only the assigned lecturer can update this subject.",403)
     if not 0<=coverage<=100 or not 1<=week<=30 or not topics:return error("Complete week, coverage and topics.")
     duplicate=client().table("syllabus_progress").select("id").eq("subject_id",subject_id).eq("week_number",week).neq("id",progress_id).limit(1).execute().data
     if duplicate:return error("Another syllabus entry already exists for this subject and week.",409)
