@@ -179,3 +179,42 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
 @keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(143,240,181,.12)}50%{box-shadow:0 0 0 7px rgba(143,240,181,0)}}
 
 .operation-crud-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:18px;padding:13px 14px;border:1px solid #355276;border-radius:12px;background:#102039}.operation-crud-head div{display:grid;gap:4px}.operation-crud-head b{color:#edf5ff;font-size:12px}.operation-crud-head span{color:#8fa8c5;font-size:10px;line-height:1.45}.crud-table th,.crud-table td{vertical-align:top}.crud-table td small{display:block;margin-top:3px;color:#8fa8c5;font-size:9px;line-height:1.35}.crud-actions{white-space:nowrap}.crud-actions button{margin-right:5px;padding:6px 8px;border:1px solid #54739c;border-radius:7px;background:#193352;color:#e7f1ff;font-size:10px;cursor:pointer}.crud-actions button:hover{background:#264a74}.crud-actions .danger-action{border-color:#a65b69;background:#3b1e29}.crud-actions .danger-action:hover{background:#592632}@media(max-width:700px){.operation-crud-head{align-items:flex-start;flex-direction:column}.crud-table{min-width:760px}.operation-table-wrap{overflow-x:auto}}
+
+/* Timetable schedule view: paper-style day/period matrix with stable edit controls. */
+.operation-view-tabs{display:flex;align-items:center;gap:6px;margin:14px 0 10px;padding:4px;width:max-content;border:1px solid #355276;border-radius:10px;background:#0b1729}
+.operation-view-tabs button{min-height:34px;padding:8px 12px;border:1px solid transparent;border-radius:7px;background:transparent;color:#9eb4cf;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;line-height:1;white-space:nowrap}
+.operation-view-tabs button.selected,.operation-view-tabs button:hover{background:#1a3456;border-color:#5379aa;color:#fff}
+.schedule-grid-wrap{margin-top:14px;border:1px solid #355276;border-radius:14px;overflow:hidden;background:#0b1729;box-shadow:0 18px 40px #02081755}
+.schedule-grid-scroller{overflow:auto}
+.schedule-grid{width:100%;min-width:1080px;border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:10px}
+.schedule-grid th,.schedule-grid td{border-right:1px solid #29425f;border-bottom:1px solid #29425f;padding:8px;vertical-align:top}
+.schedule-grid thead th{position:sticky;top:0;z-index:3;background:#142a47;color:#dfeeff;text-align:center}
+.schedule-grid thead th span,.schedule-grid thead th small{display:block}
+.schedule-grid thead th span{font-size:9px;letter-spacing:.7px}
+.schedule-grid thead th small{margin-top:4px;color:#8fa8c5;font-size:8px;font-weight:600}
+.schedule-grid .schedule-corner{position:sticky;left:0;z-index:4;width:155px;text-align:left;background:#12233d}
+.schedule-grid .schedule-corner span{font-size:10px;color:#bcd2ed}.schedule-grid .schedule-corner small{margin-top:4px;color:#7189a6}
+.schedule-grid tbody th.schedule-day{position:sticky;left:0;z-index:2;width:155px;background:#0f2037;text-align:left;color:#eef5ff}
+.schedule-grid .schedule-day b{display:block;font-size:10px}
+.schedule-grid .schedule-day span{display:block;margin-top:4px;color:#6f89a7;font-size:8px;letter-spacing:.8px}
+.schedule-grid .schedule-day.secondary{background:#0d1b2f}
+.schedule-subject-row td{background:#101f36}.schedule-teacher-row td{background:#0d1b2f}
+.schedule-entry{display:grid;gap:3px;min-width:0;padding:7px;border:1px solid #3b5d84;border-radius:8px;background:#172d4a;margin-bottom:5px}
+.schedule-entry:last-child{margin-bottom:0}
+.schedule-entry b{color:#f3f7ff;font-size:10px}
+.schedule-entry small{color:#93abc7;font-size:8px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.schedule-entry button{min-height:24px;padding:5px 7px;border-radius:6px;border:1px solid #55769f;background:#203f64;color:#e6f1ff;font-size:8px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.schedule-entry .schedule-delete{border-color:#815060;background:#3a202b}
+.schedule-entry button:hover{background:#2d5785}
+.schedule-entry .schedule-delete:hover{background:#53303e}
+.schedule-teacher{display:grid;gap:3px;padding:3px 0}
+.schedule-teacher b{color:#dbe9fa;font-size:9px;font-weight:750}
+.schedule-teacher small{color:#7892af;font-size:8px}
+.schedule-empty{display:block;padding:11px 4px;color:#526c89;text-align:center;font-size:10px}
+.operation-crud-head>.room-add,.issue-toolbar button,.operation-actions button,.crud-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:34px;line-height:1;white-space:nowrap}
+.operation-crud-head>.room-add{min-width:124px;flex:0 0 auto}
+.issue-toolbar button{min-width:86px}
+.crud-actions{display:flex;align-items:center;gap:6px}
+.crud-actions button{margin-right:0}
+.connect-detail .c-big-map button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center}
+@media(max-width:700px){.operation-view-tabs{width:100%}.operation-view-tabs button{flex:1}.operation-crud-head>.room-add{width:100%}}
