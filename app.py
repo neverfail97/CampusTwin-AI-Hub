@@ -454,8 +454,9 @@ def update_syllabus_catalog(subject_id):
     if not code or not name or not 1<=semester<=8 or credits<=0 or units<=0:return error("Complete the syllabus course fields.")
     clash=client().table("subjects").select("id").eq("code",code).neq("id",subject_id).limit(1).execute().data
     if clash:return error("Another course already uses that code.",409)
-    output=client().table("subjects").update({"code":code,"name":name,"semester":semester,"credits":credits,"course_category":category,"syllabus_units":units}).eq("id",subject_id).execute().data
-    return jsonify(output[0] if output else {"id":subject_id,"code":code,"name":name,"semester":semester,"credits":credits,"course_category":category,"syllabus_units":units})
+    output=client().table("subjects").update({"code":code,"name":name,"semester":semester,"credits":credits,"course_category":category,"syllabus_units":units}).eq("id",subject_id).select("*").execute().data
+    if not output: return error("The syllabus update was not persisted. Refresh and try again.",500)
+    return jsonify(output[0])
 
 @app.delete("/api/syllabus/catalog/<subject_id>")
 def delete_syllabus_catalog(subject_id):
@@ -634,8 +635,9 @@ def update_timetable(timetable_id):
         "room_id": data["room_id"], "section": section, "subject_id": data["subject_id"],
         "faculty_id": lecturer_id,
     }
-    output = db.table("timetable").update(payload).eq("id", timetable_id).execute().data
-    return jsonify(output[0] if output else {"id": timetable_id, **payload})
+    output = db.table("timetable").update(payload).eq("id", timetable_id).select("*").execute().data
+    if not output: return error("The timetable update was not persisted. Refresh and try again.",500)
+    return jsonify(output[0])
 
 @app.delete("/api/timetable/<timetable_id>")
 def delete_timetable(timetable_id):
@@ -730,13 +732,16 @@ def update_progress(progress_id):
     except (ValueError,TypeError): return error("Coverage and week must be valid numbers.")
     topics=str(data.get("topics_covered",current["topics_covered"])).strip()
     subject=client().table("subjects").select("faculty_id").eq("id",subject_id).execute().data
-    if not subject or subject[0]["faculty_id"]!=profile["id"]: return error("Only the assigned lecturer can update this subject.",403)
+    if not subject: return error("Subject not found in the live syllabus catalog.",404)
+    if subject[0].get("faculty_id") and subject[0]["faculty_id"] != profile["id"]:
+        return error("Only the assigned lecturer can update this subject.",403)
     if not 0<=coverage<=100 or not 1<=week<=30 or not topics:return error("Complete week, coverage and topics.")
     duplicate=client().table("syllabus_progress").select("id").eq("subject_id",subject_id).eq("week_number",week).neq("id",progress_id).limit(1).execute().data
     if duplicate:return error("Another syllabus entry already exists for this subject and week.",409)
     record={"subject_id":subject_id,"week_number":week,"coverage_percent":coverage,"topics_covered":topics,"updated_by":profile["id"],"updated_at":now()}
-    output=client().table("syllabus_progress").update(record).eq("id",progress_id).execute().data
-    return jsonify(output[0] if output else record)
+    output=client().table("syllabus_progress").update(record).eq("id",progress_id).select("*").execute().data
+    if not output: return error("The syllabus update was not persisted. Refresh and try again.",500)
+    return jsonify(output[0])
 
 @app.delete("/api/progress/<progress_id>")
 def delete_progress(progress_id):
