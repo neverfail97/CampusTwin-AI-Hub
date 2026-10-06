@@ -17,6 +17,10 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory, session
 from supabase import create_client
+try:
+    from google import genai
+except ImportError:
+    genai = None
 
 load_dotenv()
 app = Flask(__name__, static_folder="static")
@@ -113,6 +117,32 @@ def chat_context(mode, page):
     base = CHAT_KNOWLEDGE.get(mode, CHAT_KNOWLEDGE["twin"])
     return f"Assistant: {base['name']}\nScope: {base['scope']}\nCurrent page: {page or 'main page'}\nProduct knowledge: {base['topics']}"
 
+def call_gemini_chat(mode, page, question, history):
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not api_key or genai is None:
+        return None
+    model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
+    instructions = (
+        "You are a helpful in-product assistant for CampusTwin AI. Answer only about the application's documented features. "
+        "Do not invent buttons, data, APIs, permissions or capabilities. If the user asks how to perform an action, give short numbered steps. "
+        "Never reveal or request secret API keys. " + chat_context(mode, page)
+    )
+    recent = []
+    for item in (history or [])[-8:]:
+        role = item.get("role") if isinstance(item, dict) else None
+        content = item.get("content") if isinstance(item, dict) else None
+        if role in ("user", "assistant") and isinstance(content, str):
+            recent.append(f"{role.title()}: {content[:2000]}")
+    prompt = instructions + "\nConversation:\n" + "\n".join(recent) + f"\nUser: {question[:4000]}"
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(model=model, contents=prompt)
+        text = getattr(response, "text", None)
+        return text.strip() if isinstance(text, str) and text.strip() else None
+    except Exception:
+        return None
+
+
 def call_ai_chat(mode, page, question, history):
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -146,7 +176,7 @@ def call_ai_chat(mode, page, question, history):
                     texts.append(content["text"])
         return "\n".join(texts).strip() or None
     except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError):
-        return None
+        return call_gemini_chat(mode, page, question, history)
 
 @app.post("/api/chat")
 def chat():
