@@ -574,10 +574,7 @@ def add_timetable():
     subject = db.table("subjects").select("faculty_id").eq("id", data["subject_id"]).limit(1).execute().data
     if not subject:
         return error("Subject not found in the live syllabus catalog.", 404)
-    lecturer_id = subject[0].get("faculty_id")
-    if lecturer_id and lecturer_id != profile["id"]:
-        return error("You can only schedule subjects assigned to your faculty profile.", 403)
-    lecturer_id = lecturer_id or profile["id"]
+    lecturer_id = subject[0].get("faculty_id") or profile["id"]
 
     entries = db.table("timetable").select("id,day,start_time,end_time,room_id,section,faculty_id").eq("day", day).execute().data or []
     if any(_timetable_conflict(e, day, start_time, end_time, data["room_id"], str(data["section"]).strip(), lecturer_id) for e in entries):
