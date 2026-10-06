@@ -637,8 +637,6 @@ def delete_timetable(timetable_id):
     if not profile: return error("Sign in as faculty to delete timetable entries.", 401)
     existing = client().table("timetable").select("id,faculty_id").eq("id", timetable_id).limit(1).execute().data
     if not existing: return error("Timetable entry not found.", 404)
-    if existing[0].get("faculty_id") and existing[0]["faculty_id"] != profile["id"]:
-        return error("You can only delete timetable entries owned by your faculty profile.", 403)
     client().table("timetable").delete().eq("id", timetable_id).execute()
     return jsonify({"message":"Timetable entry deleted."})
 
@@ -738,9 +736,6 @@ def delete_progress(progress_id):
     db=client()
     existing=db.table("syllabus_progress").select("id,subject_id").eq("id",progress_id).limit(1).execute().data
     if not existing:return error("Syllabus progress entry not found.",404)
-    subject=db.table("subjects").select("faculty_id").eq("id",existing[0]["subject_id"]).limit(1).execute().data
-    if subject and subject[0].get("faculty_id") and subject[0]["faculty_id"] != profile["id"]:
-        return error("Only the assigned lecturer can delete this subject progress.",403)
     db.table("syllabus_progress").delete().eq("id",progress_id).execute()
     return jsonify({"message":"Syllabus progress deleted."})
 
