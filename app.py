@@ -615,10 +615,7 @@ def update_timetable(timetable_id):
     subject = db.table("subjects").select("faculty_id").eq("id", data["subject_id"]).limit(1).execute().data
     if not subject:
         return error("Subject not found in the live syllabus catalog.", 404)
-    lecturer_id = subject[0].get("faculty_id")
-    if lecturer_id and lecturer_id != profile["id"]:
-        return error("You can only schedule subjects assigned to your faculty profile.", 403)
-    lecturer_id = lecturer_id or profile["id"]
+    lecturer_id = subject[0].get("faculty_id") or profile["id"]
 
     entries = db.table("timetable").select("id,day,start_time,end_time,room_id,section,faculty_id").eq("day", day).execute().data or []
     section = str(data["section"]).strip()
@@ -705,8 +702,6 @@ def add_progress():
     if not profile:return error("Sign in as faculty to update syllabus coverage.",401)
     data=request.get_json() or {}; subject=client().table("subjects").select("faculty_id").eq("id",data.get("subject_id")).execute().data
     if not subject:return error("Subject not found in the live syllabus catalog.",404)
-    if subject[0].get("faculty_id") and subject[0]["faculty_id"] != profile["id"]:
-        return error("Only the assigned lecturer can update this subject.",403)
     try: coverage=float(data["coverage_percent"]); week=int(data["week_number"])
     except (KeyError,ValueError,TypeError):return error("Coverage and week must be valid numbers.")
     if not 0<=coverage<=100 or not 1<=week<=30 or not str(data.get("topics_covered","")).strip():return error("Complete week, coverage and topics.")
