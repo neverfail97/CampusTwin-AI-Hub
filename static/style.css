@@ -402,3 +402,19 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
   .connect-map-card .flow-map .building { width: 44%; min-height: 58px; font-size: 9.5px; }
   .connect-map-card .flow-map .building small { font-size: 8px; }
 }
+
+
+/* Timetable readability: slightly lighter surfaces and stronger contrast. */
+.schedule-grid-wrap{background:#eef3f8;border-color:#b7c8d8;box-shadow:0 12px 30px rgba(27,55,84,.12)}
+.schedule-grid{color:#203247;background:#f7f9fc}
+.schedule-grid th,.schedule-grid td{border-right-color:#c7d3df;border-bottom-color:#c7d3df}
+.schedule-grid thead th{background:#dce7f1;color:#172a3d}
+.schedule-grid thead th small,.schedule-grid thead th span{color:#47627d}
+.schedule-grid .schedule-corner{background:#d4e1ec;color:#172a3d}
+.schedule-grid .schedule-day{background:#e4edf5;color:#203247}
+.schedule-grid .schedule-day.secondary{background:#edf3f8;color:#4a6075}
+.schedule-grid td{background:#f8fafc;color:#263a4d}
+.schedule-grid .schedule-empty{color:#7b8fa3}
+.schedule-entry{background:#e6f0f8;border-color:#9eb7cc;color:#1b3147;box-shadow:0 3px 10px rgba(27,55,84,.08)}
+.schedule-entry b{color:#16304a}
+.schedule-entry small{color:#526b82}
