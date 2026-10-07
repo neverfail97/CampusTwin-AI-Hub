@@ -434,3 +434,15 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
 .schedule-entry{background:#e9f2fa;border-color:#9db5c9;color:#142d45;box-shadow:0 3px 10px rgba(18,45,69,.12)}
 .schedule-entry b{color:#102940}
 .schedule-entry small{color:#486177}
+
+
+/* Maintenance Desk rebuild */
+.maintenance-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.maintenance-summary>div{padding:14px 16px;border:1px solid #355276;border-radius:12px;background:#10213a;display:flex;flex-direction:column;gap:4px}
+.maintenance-summary b{font-size:20px;color:#f2f6ff}.maintenance-summary span{font-size:10px;color:#9eb4cf}
+.maintenance-workspace{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
+.maintenance-workspace .operation-form{margin:0;align-content:start}.maintenance-workspace h4{grid-column:1/-1;margin:0;color:#edf4ff;font-size:15px}
+.issue-card{display:flex;justify-content:space-between;gap:16px;align-items:stretch}.issue-main{min-width:0}.issue-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}.issue-meta span{font-size:9px;color:#9db1c8;padding:4px 7px;border:1px solid #304b69;border-radius:999px;background:#10213a}.issue-room{min-width:120px;display:flex;flex-direction:column;align-items:flex-end;gap:4px}.issue-room small{font-size:9px;color:#8fa8c1;text-align:right}
+.role-locked{display:none!important}
+@media(max-width:900px){.maintenance-workspace{grid-template-columns:1fr 1fr}.maintenance-workspace .maintenance-report-form{grid-column:1/-1}}
+@media(max-width:650px){.maintenance-summary{grid-template-columns:repeat(2,1fr)}.maintenance-workspace{grid-template-columns:1fr}.maintenance-workspace .maintenance-report-form{grid-column:auto}.issue-card{flex-direction:column}.issue-room{align-items:flex-start}}
