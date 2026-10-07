@@ -17,11 +17,6 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory, session
 from supabase import create_client
-try:
-    from google import genai
-except ImportError:
-    genai = None
-
 load_dotenv()
 app = Flask(__name__, static_folder="static")
 app.config.update(
@@ -119,8 +114,9 @@ def chat_context(mode, page):
 
 def call_gemini_chat(mode, page, question, history):
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not api_key or genai is None:
+    if not api_key:
         return None
+
     model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
     instructions = (
         "You are a helpful in-product assistant for CampusTwin AI. Answer only about the application's documented features. "
@@ -133,14 +129,41 @@ def call_gemini_chat(mode, page, question, history):
         content = item.get("content") if isinstance(item, dict) else None
         if role in ("user", "assistant") and isinstance(content, str):
             recent.append(f"{role.title()}: {content[:2000]}")
+
     prompt = instructions + "\nConversation:\n" + "\n".join(recent) + f"\nUser: {question[:4000]}"
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": 400}
+    }
+    req = urllib.request.Request(
+        endpoint,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "x-goog-api-key": api_key,
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
     try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(model=model, contents=prompt)
-        text = getattr(response, "text", None)
-        return text.strip() if isinstance(text, str) and text.strip() else None
-    except Exception:
+        with urllib.request.urlopen(req, timeout=25) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        candidates = data.get("candidates") or []
+        if candidates:
+            parts = (candidates[0].get("content") or {}).get("parts") or []
+            texts = [p.get("text", "") for p in parts if isinstance(p, dict)]
+            result = "\n".join(t for t in texts if t).strip()
+            if result:
+                return result
+        app.logger.warning("Gemini returned no text response")
         return None
+    except urllib.error.HTTPError as exc:
+        app.logger.error("Gemini API HTTP error: %s", exc.code)
+        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        app.logger.error("Gemini API connection/response error: %s", type(exc).__name__)
+        return None
+
 
 
 def call_ai_chat(mode, page, question, history):
