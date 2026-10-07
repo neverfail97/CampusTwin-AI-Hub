@@ -122,7 +122,9 @@ LOCAL_CHAT_RULES = {
         (lambda q: any(x in q for x in ("maintenance", "repair", "issue queue")), "Open Maintenance desk to review active issues. Issues move through reporting, assignment, In Progress/Resolved repair updates and faculty verification."),
         (lambda q: "report" in q and any(x in q for x in ("include", "content", "write", "what should")), "A strong report should include the room, exact problem/equipment, when it started, impact on teaching, priority and requested action. Example: CSE-103 projector not displaying input during class; observed at 10:15; teaching blocked; High priority; inspect projector and cable."),
         (lambda q: "report" in q or "complaint" in q, "Open Report issue. Enter faculty email, room, priority and a clear description, then submit."),
-        (lambda q: ("timetable" in q or "time table" in q) and any(x in q for x in ("student", "faculty", "worker")) and any(x in q for x in ("edit", "change", "update", "delete", "remove", "create", "add")), "No. Students cannot create, edit, or delete timetable entries. Those timetable actions require a faculty account. Faculty users can manage timetable entries according to the application role permissions."),
+        (lambda q: ("timetable" in q or "time table" in q) and "worker" in q and any(x in q for x in ("edit", "change", "update", "delete", "remove", "create", "add")), "No. Workers cannot create, edit, or delete timetable entries. Those timetable actions require a faculty account."),
+        (lambda q: ("timetable" in q or "time table" in q) and "student" in q and any(x in q for x in ("edit", "change", "update", "delete", "remove", "create", "add")), "No. Students cannot create, edit, or delete timetable entries. Those timetable actions require a faculty account."),
+        (lambda q: ("timetable" in q or "time table" in q) and "faculty" in q and any(x in q for x in ("edit", "change", "update", "delete", "remove", "create", "add")), "Yes. Faculty users can create, edit, and delete timetable entries according to the application role permissions."),
         (lambda q: any(x in q for x in ("timetable", "clash", "schedule")), "Open Clash-free timetable. Enter day, section, start/end time, room and subject. The system checks overlapping room bookings before saving."),
         (lambda q: any(x in q for x in ("syllabus", "coverage", "progress")), "Open Syllabus progress. Record subject code, week, coverage percentage, credits and topics covered, then save the weekly update."),
         (lambda q: any(x in q for x in ("dashboard", "occupancy")), "CampusConnect Dashboard summarizes rooms available, seat occupancy, open issues and syllabus coverage. Chart tabs switch between Occupancy, Issues and Coverage."),
@@ -180,6 +182,7 @@ def call_gemini_chat(mode, page, question, history, user_role=None):
     prompt = instructions + "\nCURRENT SIGNED-IN USER ROLE: " + str(user_role or "unknown") + "\nRECENT CONVERSATION:\n" + "\n".join(recent) + f"\nCURRENT USER QUESTION:\n{question[:4000]}"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {
+        "systemInstruction": {"parts": [{"text": instructions}]},
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": 400, "temperature": 0.2}
     }
