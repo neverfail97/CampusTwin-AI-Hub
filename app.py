@@ -118,31 +118,34 @@ def call_gemini_chat(mode, page, question, history):
         return None
 
     model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
+    context = chat_context(mode, page)
     instructions = (
-        "You are a helpful in-product assistant for CampusTwin AI. Answer only about the application's documented features. "
-        "Do not invent buttons, data, APIs, permissions or capabilities. If the user asks how to perform an action, give short numbered steps. "
-        "Never reveal or request secret API keys. " + chat_context(mode, page)
+        "You are the CampusTwin AI in-product assistant. "
+        "Answer the user's CURRENT question directly and specifically. "
+        "Do not reply with a generic description of CampusTwin unless the user asks for a general description. "
+        "Use the application context below as your source of truth. "
+        "If the user asks how to do something, provide concise numbered steps using only documented UI/actions. "
+        "If the exact action is not documented, say that clearly instead of inventing a button or feature. "
+        "Keep answers concise and practical. Never reveal or request secret API keys. "
+        "\nAPPLICATION CONTEXT:\n" + context
     )
     recent = []
-    for item in (history or [])[-8:]:
+    for item in (history or [])[-6:]:
         role = item.get("role") if isinstance(item, dict) else None
         content = item.get("content") if isinstance(item, dict) else None
         if role in ("user", "assistant") and isinstance(content, str):
-            recent.append(f"{role.title()}: {content[:2000]}")
+            recent.append(f"{role.title()}: {content[:1500]}")
 
-    prompt = instructions + "\nConversation:\n" + "\n".join(recent) + f"\nUser: {question[:4000]}"
+    prompt = instructions + "\nRECENT CONVERSATION:\n" + "\n".join(recent) + f"\nCURRENT USER QUESTION:\n{question[:4000]}"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": 400}
+        "generationConfig": {"maxOutputTokens": 400, "temperature": 0.2}
     }
     req = urllib.request.Request(
         endpoint,
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "x-goog-api-key": api_key,
-            "Content-Type": "application/json",
-        },
+        headers={"x-goog-api-key": api_key, "Content-Type": "application/json"},
         method="POST",
     )
     try:
