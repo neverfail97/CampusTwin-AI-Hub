@@ -144,39 +144,7 @@ def call_gemini_chat(mode, page, question, history):
 
 
 def call_ai_chat(mode, page, question, history):
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        return None
-    model = os.environ.get("OPENAI_MODEL", "gpt-6-luna").strip()
-    endpoint = os.environ.get("OPENAI_RESPONSES_URL", "https://api.openai.com/v1/responses").strip()
-    instructions = (
-        "You are a helpful in-product assistant for CampusTwin AI. Answer only about the application's documented features. "
-        "Do not invent buttons, data, APIs, permissions or capabilities. If the user asks how to perform an action, give short numbered steps. "
-        "Distinguish measured values from projected/simulated values. Never reveal or request secret API keys. "
-        + chat_context(mode, page)
-    )
-    recent = []
-    for item in (history or [])[-8:]:
-        role = item.get("role") if isinstance(item, dict) else None
-        content = item.get("content") if isinstance(item, dict) else None
-        if role in ("user", "assistant") and isinstance(content, str):
-            recent.append({"role": role, "content": content[:2000]})
-    recent.append({"role": "user", "content": question[:4000]})
-    payload = {"model": model, "instructions": instructions, "input": recent, "max_output_tokens": 500}
-    req = urllib.request.Request(endpoint, data=json.dumps(payload).encode("utf-8"), headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=25) as response:
-            data = json.loads(response.read().decode("utf-8"))
-        if isinstance(data.get("output_text"), str) and data["output_text"].strip():
-            return data["output_text"].strip()
-        texts = []
-        for item in data.get("output", []):
-            for content in item.get("content", []):
-                if content.get("type") == "output_text" and content.get("text"):
-                    texts.append(content["text"])
-        return "\n".join(texts).strip() or None
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, json.JSONDecodeError):
-        return call_gemini_chat(mode, page, question, history)
+    return call_gemini_chat(mode, page, question, history)
 
 @app.post("/api/chat")
 def chat():
