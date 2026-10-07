@@ -394,3 +394,11 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
   .connect-map-card .flow-map .building[data-map-index="4"] { bottom: 5%; right: 1%; }
   .connect-map-card .flow-map::before { width: 145px; height: 145px; font-size: 8px; }
 }
+
+
+/* Follow-up hardening: keep Connect hero room labels inside the map on narrow screens. */
+@media (max-width: 480px) {
+  .connect-map-card .flow-map { height: 325px; }
+  .connect-map-card .flow-map .building { width: 44%; min-height: 58px; font-size: 9.5px; }
+  .connect-map-card .flow-map .building small { font-size: 8px; }
+}
