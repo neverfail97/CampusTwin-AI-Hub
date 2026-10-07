@@ -153,7 +153,7 @@ def chat_context(mode, page):
     base = CHAT_KNOWLEDGE.get(mode, CHAT_KNOWLEDGE["twin"])
     return f"Assistant: {base['name']}\nScope: {base['scope']}\nCurrent page: {page or 'main page'}\nProduct knowledge: {base['topics']}"
 
-def call_gemini_chat(mode, page, question, history):
+def call_gemini_chat(mode, page, question, history, user_role=None):
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not api_key:
         return None
@@ -177,7 +177,7 @@ def call_gemini_chat(mode, page, question, history):
         if role in ("user", "assistant") and isinstance(content, str):
             recent.append(f"{role.title()}: {content[:1500]}")
 
-    prompt = instructions + "\nRECENT CONVERSATION:\n" + "\n".join(recent) + f"\nCURRENT USER QUESTION:\n{question[:4000]}"
+    prompt = instructions + "\nCURRENT SIGNED-IN USER ROLE: " + str(user_role or "unknown") + "\nRECENT CONVERSATION:\n" + "\n".join(recent) + f"\nCURRENT USER QUESTION:\n{question[:4000]}"
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
@@ -216,8 +216,8 @@ def call_gemini_chat(mode, page, question, history):
 
 
 
-def call_ai_chat(mode, page, question, history):
-    return call_gemini_chat(mode, page, question, history)
+def call_ai_chat(mode, page, question, history, user_role=None):
+    return call_gemini_chat(mode, page, question, history, user_role)
 
 @app.post("/api/chat")
 def chat():
@@ -229,12 +229,14 @@ def chat():
     question = str(data.get("question", "")).strip()
     if not question:
         return error("Enter a question.")
+    profile = session.get("profile") or {}
+    user_role = profile.get("role", "unknown")
+    ai = call_ai_chat(mode, page, question, data.get("history", []), user_role)
+    if ai:
+        return jsonify({"answer": ai, "source": "ai"})
     local = local_chat_answer(mode, question)
     if local:
         return jsonify({"answer": local, "source": "local"})
-    ai = call_ai_chat(mode, page, question, data.get("history", []))
-    if ai:
-        return jsonify({"answer": ai, "source": "ai"})
     fallback = {
         "twin": "I can explain CampusConnect, EcoCampus, navigation and what each system is used for. Ask me about one of those features.",
         "connect": "I can help with Rooms & Resources, the Optimizer, Maintenance, Timetable, Syllabus Progress, Dashboard, Room Map, AI Insights and reporting. Ask me how to use a specific feature.",
