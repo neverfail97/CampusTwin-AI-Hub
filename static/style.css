@@ -418,3 +418,19 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
 .schedule-entry{background:#e6f0f8;border-color:#9eb7cc;color:#1b3147;box-shadow:0 3px 10px rgba(27,55,84,.08)}
 .schedule-entry b{color:#16304a}
 .schedule-entry small{color:#526b82}
+
+
+/* Timetable: dark surrounding background with a light, high-contrast table. */
+.schedule-grid-wrap{background:#0b1729;border-color:#355276;box-shadow:0 16px 36px rgba(2,8,23,.45)}
+.schedule-grid{color:#172536;background:#f8fafc}
+.schedule-grid th,.schedule-grid td{border-right-color:#c4cfda;border-bottom-color:#c4cfda}
+.schedule-grid thead th{background:#ffffff;color:#14283c}
+.schedule-grid thead th span,.schedule-grid thead th small{color:#405a72}
+.schedule-grid .schedule-corner{background:#eef2f6;color:#14283c}
+.schedule-grid .schedule-day{background:#ffffff;color:#172b3f}
+.schedule-grid .schedule-day.secondary{background:#f1f4f7;color:#40576c}
+.schedule-grid td{background:#ffffff;color:#1b3045}
+.schedule-grid .schedule-empty{color:#71859a}
+.schedule-entry{background:#e9f2fa;border-color:#9db5c9;color:#142d45;box-shadow:0 3px 10px rgba(18,45,69,.12)}
+.schedule-entry b{color:#102940}
+.schedule-entry small{color:#486177}
