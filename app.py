@@ -70,6 +70,45 @@ CHAT_KNOWLEDGE = {
     },
 }
 
+PROJECT_KNOWLEDGE = """
+CampusTwin AI is a campus management application with three assistant contexts: CampusTwin overview, CampusConnect, and EcoCampus.
+
+ROLES AND PERMISSIONS:
+- Student: can sign in and use student-accessible views, but cannot create, edit, or delete timetable entries, rooms, syllabus records, maintenance verification, or other faculty-only administration.
+- Faculty: can manage timetable entries, subjects/syllabus records, rooms/resources, maintenance workflows and the AI Resource Optimizer according to the application's role checks.
+- Worker: can access operational areas such as CampusConnect dashboard/rooms/resources and maintenance workflows, but faculty-only actions remain restricted.
+- Timetable API: viewing timetable data and timetable create/edit/delete operations are faculty-controlled in the current application.
+- Syllabus API: syllabus progress/subject administration is faculty-controlled.
+- Rooms/resources administration is faculty-controlled.
+- AI Resource Optimizer is faculty-controlled.
+- Maintenance reporting/verification follows the role checks shown in the application; do not claim a student can perform faculty/worker administration.
+- Never invent permissions. If a role/action is not documented here, say that the current application does not document that permission.
+
+CAMPUSCONNECT:
+- Academic/operations system for rooms and resources, timetable, syllabus progress, maintenance, dashboard, room map, AI Resource Optimizer, AI insights and issue reporting.
+- Rooms & Resources: rooms have capacity, status and equipment/resource information; faculty can add/edit room records.
+- Timetable: records include day, start/end time, room, section, subject and faculty. The application checks timetable conflicts before saving. Faculty can create, edit and delete timetable entries.
+- Syllabus Progress: faculty can maintain subject/week coverage information and save progress.
+- Maintenance: issues can be reported, assigned, moved through repair status and verified according to role permissions.
+- AI Resource Optimizer evaluates room suitability using student count, capacity, equipment, room status, maintenance issues and timetable conflicts.
+- Dashboard summarizes operational information such as room availability/occupancy, issues and syllabus coverage.
+- Room Map provides room details such as capacity, occupancy, equipment and status.
+
+ECOCAMPUS:
+- Sustainability system for water, energy, waste, Eco Score, campus/building profiles, AI insights, maintenance, impact and what-if projections.
+- What-If Simulator values are projections/simulations, not measured savings.
+- Building profiles can show resource usage, occupancy, alerts, Eco Score and recommendations.
+- Maintenance workflows may connect detected sustainability issues to actions and verification.
+
+AI BEHAVIOR:
+- Answer the user's exact question first.
+- For permission questions, state the role and whether the action is allowed.
+- For how-to questions, give short numbered steps.
+- Do not claim an action is possible just because a button might exist; use the documented role rules.
+- If information is unavailable, say so rather than inventing it.
+- Do not reveal secrets, API keys, environment variables or internal security details.
+""" 
+
 LOCAL_CHAT_RULES = {
     "twin": [
         (lambda q: any(x in q for x in ("campusconnect", "connect")), "CampusConnect is the academic-operations side: rooms and resources, AI Resource Optimizer, maintenance, clash-free timetable and syllabus progress."),
@@ -119,7 +158,7 @@ def call_gemini_chat(mode, page, question, history):
         return None
 
     model = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash").strip()
-    context = chat_context(mode, page)
+    context = chat_context(mode, page) + "\n\nFULL PROJECT KNOWLEDGE:\n" + PROJECT_KNOWLEDGE
     instructions = (
         "You are the CampusTwin AI in-product assistant. "
         "Answer the user's CURRENT question directly and specifically. "
