@@ -593,20 +593,25 @@ def verify(issue_id):
         return error("Only a resolved issue can be verified.", 409)
     if verdict == "Reopened" and issue["status"] not in ("Resolved", "Verified"):
         return error("Only a resolved or verified issue can be reopened.", 409)
-    payload = {
-        "status": "Verified" if verdict == "Verified" else "Open",
-        "faculty_verification": verdict,
-        "updated_at": now(),
-    }
-    if note:
-        payload["worker_note"] = (issue.get("worker_note") or "") + ("\n" if issue.get("worker_note") else "") + f"Faculty: {note}"
     try:
+        if verdict == "Verified":
+            deleted = client().table("issues").delete().eq("id", issue_id).select("id").execute().data or []
+            if not deleted:
+                return error("The issue could not be deleted after verification.", 500)
+            return jsonify({"message":"Issue verified and removed from the maintenance database.","status":"Deleted","id":issue_id})
+        payload = {
+            "status": "Open",
+            "faculty_verification": "Reopened",
+            "updated_at": now(),
+        }
+        if note:
+            payload["worker_note"] = (issue.get("worker_note") or "") + ("\n" if issue.get("worker_note") else "") + f"Faculty: {note}"
         result = client().table("issues").update(payload).eq("id", issue_id).select("*, rooms(id,room_number,room_name,floor,category)").execute().data or []
         if not result:
-            return error("The verification update was not saved.", 500)
+            return error("The reopen update was not saved.", 500)
         return jsonify(result[0])
     except Exception as exc:
-        return error(f"Could not save verification: {exc}", 503)
+        return error(f"Could not save verification update: {exc}", 503)
 
 
 
