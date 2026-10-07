@@ -493,40 +493,122 @@ def optimize_room():
 
 @app.get("/api/issues")
 def issues():
-    if not require(roles=["faculty", "worker"]): return error("You do not have access to the maintenance queue.", 403)
-    return jsonify(client().table("issues").select("*, rooms(room_number,room_name)").order("priority_rank", desc=True).order("created_at", desc=True).execute().data)
+    if not require(roles=["faculty", "worker"]):
+        return error("You do not have access to the maintenance desk.", 403)
+    try:
+        data = client().table("issues").select("*, rooms(id,room_number,room_name,floor,category)").order("priority_rank", desc=True).order("created_at", desc=True).execute().data or []
+        return jsonify(data)
+    except Exception as exc:
+        return error(f"Maintenance issues could not be loaded: {exc}", 503)
+
 
 @app.post("/api/issues")
 def report_issue():
     profile = require("faculty")
-    if not profile: return error("Sign in as faculty to report an issue.", 401)
+    if not profile:
+        return error("Only faculty can report a maintenance issue.", 403)
     data = request.get_json() or {}
-    required = ("room_id", "title", "category", "priority", "description")
-    if not all(data.get(field) for field in required): return error("Complete all issue fields.")
-    rank = {"Low": 1, "Medium": 2, "High": 3, "Critical": 4}.get(data["priority"], 1)
-    result = client().table("issues").insert({**{k:data[k] for k in required}, "priority_rank":rank, "reported_by":profile["id"], "created_at":now()}).execute().data
-    return jsonify(result[0]), 201
+    title = str(data.get("title", "")).strip()
+    category = str(data.get("category", "")).strip()
+    priority = str(data.get("priority", "")).strip()
+    description = str(data.get("description", "")).strip()
+    room_id = str(data.get("room_id", "")).strip()
+    if not all([room_id, title, category, priority, description]):
+        return error("Room, title, category, priority and description are required.")
+    if priority not in ("Low", "Medium", "High", "Critical"):
+        return error("Choose a valid priority.")
+    room = client().table("rooms").select("id,room_number,room_name").eq("id", room_id).limit(1).execute().data or []
+    if not room:
+        return error("The selected room does not exist.", 404)
+    rank = {"Low": 1, "Medium": 2, "High": 3, "Critical": 4}[priority]
+    payload = {
+        "room_id": room_id,
+        "title": title,
+        "category": category,
+        "priority": priority,
+        "priority_rank": rank,
+        "description": description,
+        "status": "Open",
+        "reported_by": profile["id"],
+        "assigned_to": None,
+        "worker_note": "",
+        "faculty_verification": "Pending",
+        "created_at": now(),
+        "updated_at": now(),
+    }
+    try:
+        result = client().table("issues").insert(payload).select("*, rooms(id,room_number,room_name,floor,category)").execute().data or []
+        if not result:
+            return error("The issue was not saved.", 500)
+        return jsonify(result[0]), 201
+    except Exception as exc:
+        return error(f"Could not save the maintenance issue: {exc}", 503)
+
 
 @app.patch("/api/issues/<issue_id>/repair")
 def repair(issue_id):
     profile = require("worker")
-    if not profile: return error("Sign in as maintenance staff to update this issue.", 401)
-    data = request.get_json() or {}; status = data.get("status")
-    if status not in ("In Progress", "Resolved"): return error("Choose In Progress or Resolved.")
-    client().table("issues").update({"status":status,"worker_note":data.get("worker_note", ""),"updated_at":now(),"assigned_to":profile["id"]}).eq("id", issue_id).execute()
-    return jsonify({"message":"Maintenance update saved."})
+    if not profile:
+        return error("Only maintenance staff can update repair status.", 403)
+    data = request.get_json() or {}
+    status = str(data.get("status", "")).strip()
+    note = str(data.get("worker_note", "")).strip()
+    if status not in ("In Progress", "Resolved"):
+        return error("Repair status must be In Progress or Resolved.")
+    existing = client().table("issues").select("id,status").eq("id", issue_id).limit(1).execute().data or []
+    if not existing:
+        return error("Issue not found.", 404)
+    if existing[0]["status"] == "Verified":
+        return error("A verified issue cannot be changed by maintenance staff. Ask faculty to reopen it.", 409)
+    try:
+        result = client().table("issues").update({
+            "status": status,
+            "worker_note": note,
+            "updated_at": now(),
+            "assigned_to": profile["id"],
+            "faculty_verification": "Pending" if status == "Resolved" else "Pending",
+        }).eq("id", issue_id).select("*, rooms(id,room_number,room_name,floor,category)").execute().data or []
+        if not result:
+            return error("The repair update was not saved.", 500)
+        return jsonify(result[0])
+    except Exception as exc:
+        return error(f"Could not update the repair: {exc}", 503)
+
 
 @app.patch("/api/issues/<issue_id>/verify")
 def verify(issue_id):
     profile = require("faculty")
-    if not profile: return error("Sign in as faculty to verify this issue.", 401)
-    data = request.get_json() or {}; verdict = data.get("verdict")
-    issue = client().table("issues").select("reported_by").eq("id", issue_id).execute().data
-    if not issue: return error("Issue not found.", 404)
-    if issue[0]["reported_by"] != profile["id"]: return error("Only the reporting faculty member may verify or reopen this issue.", 403)
-    if verdict not in ("Verified", "Reopened"): return error("Choose Verified or Reopened.")
-    client().table("issues").update({"status":"Verified" if verdict == "Verified" else "Open", "faculty_verification":verdict, "updated_at":now()}).eq("id", issue_id).execute()
-    return jsonify({"message":f"Issue {verdict.lower()}."})
+    if not profile:
+        return error("Only faculty can verify maintenance work.", 403)
+    data = request.get_json() or {}
+    verdict = str(data.get("verdict", "")).strip()
+    note = str(data.get("faculty_note", "")).strip()
+    if verdict not in ("Verified", "Reopened"):
+        return error("Choose Verified or Reopened.")
+    existing = client().table("issues").select("id,status,reported_by,faculty_verification,worker_note").eq("id", issue_id).limit(1).execute().data or []
+    if not existing:
+        return error("Issue not found.", 404)
+    issue = existing[0]
+    if verdict == "Verified" and issue["status"] != "Resolved":
+        return error("Only a resolved issue can be verified.", 409)
+    if verdict == "Reopened" and issue["status"] not in ("Resolved", "Verified"):
+        return error("Only a resolved or verified issue can be reopened.", 409)
+    payload = {
+        "status": "Verified" if verdict == "Verified" else "Open",
+        "faculty_verification": verdict,
+        "updated_at": now(),
+    }
+    if note:
+        payload["worker_note"] = (issue.get("worker_note") or "") + ("\n" if issue.get("worker_note") else "") + f"Faculty: {note}"
+    try:
+        result = client().table("issues").update(payload).eq("id", issue_id).select("*, rooms(id,room_number,room_name,floor,category)").execute().data or []
+        if not result:
+            return error("The verification update was not saved.", 500)
+        return jsonify(result[0])
+    except Exception as exc:
+        return error(f"Could not save verification: {exc}", 503)
+
+
 
 @app.get("/api/subjects")
 def subjects():
