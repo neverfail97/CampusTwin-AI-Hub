@@ -6,6 +6,7 @@ import os
 import json
 import csv
 import io
+import time
 import urllib.error
 import urllib.request
 try:
@@ -148,24 +149,30 @@ def call_gemini_chat(mode, page, question, history):
         headers={"x-goog-api-key": api_key, "Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=25) as response:
-            data = json.loads(response.read().decode("utf-8"))
-        candidates = data.get("candidates") or []
-        if candidates:
-            parts = (candidates[0].get("content") or {}).get("parts") or []
-            texts = [p.get("text", "") for p in parts if isinstance(p, dict)]
-            result = "\n".join(t for t in texts if t).strip()
-            if result:
-                return result
-        app.logger.warning("Gemini returned no text response")
-        return None
-    except urllib.error.HTTPError as exc:
-        app.logger.error("Gemini API HTTP error: %s", exc.code)
-        return None
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        app.logger.error("Gemini API connection/response error: %s", type(exc).__name__)
-        return None
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=25) as response:
+                data = json.loads(response.read().decode("utf-8"))
+            candidates = data.get("candidates") or []
+            if candidates:
+                parts = (candidates[0].get("content") or {}).get("parts") or []
+                texts = [p.get("text", "") for p in parts if isinstance(p, dict)]
+                result = "\n".join(t for t in texts if t).strip()
+                if result:
+                    return result
+            app.logger.warning("Gemini returned no text response")
+            return None
+        except urllib.error.HTTPError as exc:
+            if exc.code == 503 and attempt < 2:
+                delay = 2 ** attempt
+                app.logger.warning("Gemini API returned 503; retrying in %ss", delay)
+                time.sleep(delay)
+                continue
+            app.logger.error("Gemini API HTTP error: %s", exc.code)
+            return None
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+            app.logger.error("Gemini API connection/response error: %s", type(exc).__name__)
+            return None
 
 
 
