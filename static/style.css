@@ -218,3 +218,22 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
 .crud-actions button{margin-right:0}
 .connect-detail .c-big-map button{display:flex!important;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center}
 @media(max-width:700px){.operation-view-tabs{width:100%}.operation-view-tabs button{flex:1}.operation-crud-head>.room-add{width:100%}}
+
+/* CampusConnect polish: Resource Hub visual */
+.connect-map-card .cse-108-room{right:14%!important;top:24%!important;transform:translate(0,0)!important}
+.resource-hub-watermark{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:210px;height:150px;border:1px solid #75a9e655;border-radius:28px;background:radial-gradient(circle at 50% 35%,#2c568d99,#102441cc 65%,#0a1729e8);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#dff0ff;text-align:center;box-shadow:0 0 70px #4b91df33,inset 0 1px #b7dbff22}
+.resource-hub-watermark .hub-logo{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:linear-gradient(145deg,#73b9ff,#4165d8);border:1px solid #a9d8ff88;font-size:24px;box-shadow:0 10px 24px #5e9df744}
+.resource-hub-watermark b{font-size:12px;letter-spacing:1.2px}
+.resource-hub-watermark small{font-size:7px;letter-spacing:1px;color:#88add4}
+.metric-detail-action{margin-top:15px;padding:9px 12px;border-radius:8px;border:1px solid #5379aa;background:#203f64;color:#e6f1ff;font-size:10px;font-weight:800}
+.metric-detail-action:hover{background:#2d5785}
+.operation-view-tabs{flex-wrap:wrap}
+.schedule-grid{min-width:1180px}
+.schedule-grid .schedule-corner{width:170px}
+.schedule-grid .schedule-day{width:170px}
+.schedule-entry{min-height:72px}
+.schedule-entry b{font-size:11px}
+.schedule-entry small{font-size:9px;white-space:normal}
+.schedule-teacher b{font-size:9px}
+.cse-108-room{z-index:4}
+@media(max-width:700px){.resource-hub-watermark{width:165px;height:120px}.resource-hub-watermark b{font-size:10px}.resource-hub-watermark small{font-size:6px}.connect-map-card .cse-108-room{right:8%!important;top:20%!important}.schedule-grid{min-width:1000px}}
