@@ -28,7 +28,7 @@ const BACK_TARGETS={
  'c-insights':'connect',
  'c-report':'connect'
 };
-$$('.back').forEach(x=>x.onclick=()=>{const target=BACK_TARGETS[activeDetail]||(activeDetail?.startsWith('c-')?'connect':'eco');showView(target);});
+$('.back').forEach(x=>x.onclick=()=>{const target=BACK_TARGETS[activeDetail]||(activeDetail?.startsWith('c-')?'connect':'eco');if(target.startsWith('eco-')){showDetail(target);return;}showView(target);});
 $('#eco-menu')?.addEventListener('click',()=>$('#eco-links').classList.toggle('open'));
 $('#connect-menu')?.addEventListener('click',()=>$('#connect-links').classList.toggle('open'));
 const operation={optimizer:{title:'AI Resource Optimizer',intro:'Find a teaching-ready room from capacity, equipment, maintenance and timetable constraints.',icon:'✦'},rooms:{title:'Rooms & resources',intro:'Search, filter and inspect every CSE space with a consistent room-card layout.',icon:'⌂'},maintenance:{title:'Maintenance desk',intro:'Prioritise open issues, update repair state and keep verification visible to the team.',icon:'⚑'},timetable:{title:'Clash-free timetable',intro:'Create a timetable entry while checking room, section and lecturer conflicts.',icon:'◫'},progress:{title:'Syllabus progress',intro:'Record weekly coverage and keep teaching progress connected to the timetable.',icon:'📈'}};
