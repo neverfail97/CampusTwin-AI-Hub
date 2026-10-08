@@ -1,23 +1,22 @@
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const toast=message=>{const node=$('#toast');if(!node)return;node.textContent=message;node.classList.add('show');setTimeout(()=>node.classList.remove('show'),3000)};
 let activeView='twin',activeDetail=null,botMode='eco',projectorFailure=false,currentProfile=null;
-const ROLE_ACCESS={student:{views:['twin','eco'],connectPages:[],operations:[],ecoPages:['dashboard','map','eco-operations','eco-resources','eco-impact','eco-simulator','insights','report']},faculty:{views:['twin','connect','eco'],connectPages:['c-dashboard','c-map','c-insights','c-report'],operations:['optimizer','rooms','maintenance','timetable','progress'],ecoPages:['dashboard','map','eco-operations','eco-resources','eco-impact','eco-simulator','insights','report']},worker:{views:['twin','connect','eco'],connectPages:['c-dashboard','c-map','c-insights'],operations:['maintenance'],ecoPages:['dashboard','map','eco-operations','eco-resources','eco-impact','eco-simulator','insights','report']}};
+const ROLE_ACCESS={student:{views:['twin','eco','eco-operations-page'],connectPages:[],operations:[],ecoPages:['dashboard','map','eco-resources','eco-impact','eco-simulator','insights','report']},faculty:{views:['twin','connect','eco','eco-operations-page'],connectPages:['c-dashboard','c-map','c-insights','c-report'],operations:['optimizer','rooms','maintenance','timetable','progress'],ecoPages:['dashboard','map','eco-resources','eco-impact','eco-simulator','insights','report']},worker:{views:['twin','connect','eco','eco-operations-page'],connectPages:['c-dashboard','c-map','c-insights'],operations:['maintenance'],ecoPages:['dashboard','map','eco-resources','eco-impact','eco-simulator','insights','report']}}};
 function hasAccess(type,value){return !!currentProfile && (ROLE_ACCESS[currentProfile.role]?.[type]||[]).includes(value)}
 function denyAccess(){toast(`You don't have access to this option as ${currentProfile?.role||'guest'}.`)}
 function enforceElementAccess(){$$('[data-access]').forEach(el=>{const allowed=el.dataset.access.split(',').includes(currentProfile?.role);el.classList.toggle('role-locked',!allowed);el.setAttribute('aria-disabled',String(!allowed))})}
 function openAccessDialog(){const d=$('#access');if(d&&!d.open)d.showModal()}
 function setTopbarTheme(mode){document.body.classList.remove('context-connect','context-eco','context-twin');document.body.classList.add(mode==='connect'?'context-connect':mode==='eco'?'context-eco':'context-twin');}
-function showView(id){if(!currentProfile){openAccessDialog();return}if(!hasAccess('views',id)){denyAccess();return}$$('.view').forEach(x=>x.classList.remove('active'));$$('.detail-page').forEach(x=>x.classList.remove('active'));$('#connect-operation-panel')?.setAttribute('hidden','');const target=$('#'+id);if(target)target.classList.add('active');activeView=id;activeDetail=null;$('.switcher')?.classList.toggle('eco',id==='eco');$('.switcher')?.classList.toggle('none',!['connect','eco'].includes(id));$$('.switcher button').forEach(x=>x.classList.toggle('active',x.dataset.view===id));setTopbarTheme(id==='connect'?'connect':id==='eco'?'eco':'twin');syncBotVisibility();window.scrollTo({top:0,behavior:'smooth'});}
+function showView(id){if(!currentProfile){openAccessDialog();return}if(!hasAccess('views',id)){denyAccess();return}$('.view').forEach(x=>x.classList.remove('active'));$('.detail-page').forEach(x=>x.classList.remove('active'));$('#connect-operation-panel')?.setAttribute('hidden','');const target=$('#'+id);if(target)target.classList.add('active');activeView=id;activeDetail=null;const isEcoView=id==='eco'||id==='eco-operations-page';$('.switcher')?.classList.toggle('eco',isEcoView);$('.switcher')?.classList.toggle('none',!['connect','eco','eco-operations-page'].includes(id));$('.switcher button').forEach(x=>x.classList.toggle('active',x.dataset.view===(isEcoView?'eco':id)));setTopbarTheme(id==='connect'?'connect':isEcoView?'eco':'twin');syncBotVisibility();window.scrollTo({top:0,behavior:'smooth'});}
 function showDetail(id){if(!currentProfile){openAccessDialog();return}if(id==='operations'){openOperation('optimizer');return}if(id.startsWith('c-')&&!hasAccess('connectPages',id)){denyAccess();return}if(['dashboard','map','insights','report','eco-operations'].includes(id)&&!hasAccess('ecoPages',id)){denyAccess();return}$$('.view').forEach(x=>x.classList.remove('active'));$$('.detail-page').forEach(x=>x.classList.remove('active'));const target=$('#'+id);if(target)target.classList.add('active');activeDetail=id;setTopbarTheme(id.startsWith('c-')?'connect':'eco');syncBotVisibility();window.scrollTo({top:0,behavior:'smooth'});if(id==='c-dashboard')loadConnectDashboard();if(id==='c-map')loadConnectMapRooms()}
 $$('[data-view]').forEach(x=>x.onclick=()=>showView(x.dataset.view));
-$$('[data-eco-page]').forEach(x=>x.onclick=()=>{const key=x.dataset.ecoPage;if(!hasAccess('ecoPages',key)){denyAccess();return}showDetail(key)});
+$('[data-eco-page]').forEach(x=>x.onclick=()=>{const key=x.dataset.ecoPage;if(key==='eco-operations'){if(x.dataset.access&&!x.dataset.access.split(',').includes(currentProfile?.role)){denyAccess();return}showView('eco-operations-page');return}if(!hasAccess('ecoPages',key)){denyAccess();return}showDetail(key)});
 $$('[data-connect-page]').forEach(x=>x.onclick=()=>{const key=x.dataset.connectPage;if(!hasAccess('connectPages',key)){denyAccess();return}showDetail(key);$('#connect-links')?.classList.remove('open')});
 const BACK_TARGETS={
- 'eco-resources':'eco-operations',
- 'eco-impact':'eco-operations',
- 'eco-simulator':'eco-operations',
- 'eco-maintenance':'eco-operations',
- 'eco-operations':'eco',
+ 'eco-resources':'eco-operations-page',
+ 'eco-impact':'eco-operations-page',
+ 'eco-simulator':'eco-operations-page',
+ 'eco-maintenance':'eco-operations-page',
  'dashboard':'eco',
  'map':'eco',
  'insights':'eco',
