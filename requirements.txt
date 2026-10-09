@@ -1,0 +1,6 @@
+Flask==3.1.2
+google-genai==1.63.0
+gunicorn==23.0.0; platform_system != "Windows"
+openpyxl==3.1.5
+python-dotenv==1.1.1
+supabase==2.24.0
