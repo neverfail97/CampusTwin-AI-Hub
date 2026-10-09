@@ -521,3 +521,70 @@ body.access-locked main{filter:blur(2px);pointer-events:none;user-select:none}
 .ptu-node.civil{left:6%;top:10.7%}
 .ptu-node.chemical{left:25%;top:78.6%}
 @media(max-width:600px){.ptu-node.admin{left:45%;top:40%}.ptu-node.library{left:48%;top:13%}.ptu-node.cse{left:6%;top:36%}.ptu-node.aids{left:6%;top:63%}.ptu-node.civil{left:5%;top:12%}.ptu-node.chemical{left:25%;top:81%}}
+
+
+/* Non-overlapping campus building layout: 3-column spatial grid with reserved walkways. */
+#ptu-map-canvas.ptu-campus-map{
+  height:auto;
+  min-height:0;
+  aspect-ratio: 1000 / 560;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:repeat(3,minmax(100px,1fr));
+  gap:clamp(10px,2vw,24px);
+  padding:clamp(14px,2.8vw,30px);
+  align-items:stretch;
+  justify-items:stretch;
+}
+#ptu-map-canvas.ptu-campus-map>svg{z-index:0}
+#ptu-map-canvas.ptu-campus-map .ptu-node{
+  position:relative;
+  inset:auto!important;
+  transform:none!important;
+  width:100%;
+  max-width:none;
+  min-width:0;
+  min-height:74px;
+  height:100%;
+  margin:0;
+  padding:clamp(8px,1.2vw,15px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  overflow-wrap:anywhere;
+  white-space:normal;
+  line-height:1.35;
+  z-index:2;
+}
+#ptu-map-canvas.ptu-campus-map .ptu-node:hover,
+#ptu-map-canvas.ptu-campus-map .ptu-node.selected{transform:translateY(-2px)!important;z-index:3}
+#ptu-map-canvas.ptu-campus-map .ptu-node.admin{grid-column:2;grid-row:2}
+#ptu-map-canvas.ptu-campus-map .ptu-node.library{grid-column:2;grid-row:1}
+#ptu-map-canvas.ptu-campus-map .ptu-node.cse{grid-column:1;grid-row:2}
+#ptu-map-canvas.ptu-campus-map .ptu-node.aids{grid-column:1;grid-row:3}
+#ptu-map-canvas.ptu-campus-map .ptu-node.civil{grid-column:1;grid-row:1}
+#ptu-map-canvas.ptu-campus-map .ptu-node.chemical{grid-column:2;grid-row:3}
+#ptu-map-canvas.ptu-campus-map .ptu-node.ece{grid-column:3;grid-row:1}
+#ptu-map-canvas.ptu-campus-map .ptu-node.eee{grid-column:3;grid-row:2}
+#ptu-map-canvas.ptu-campus-map .ptu-node.mech{grid-column:3;grid-row:3}
+@media(max-width:600px){
+  #ptu-map-canvas.ptu-campus-map{
+    aspect-ratio:auto;
+    min-height:0;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:repeat(5,minmax(76px,auto));
+    gap:10px;
+    padding:12px;
+  }
+  #ptu-map-canvas.ptu-campus-map .ptu-node{min-height:76px;font-size:11px;padding:8px}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.civil{grid-column:1;grid-row:1}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.library{grid-column:2;grid-row:1}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.cse{grid-column:1;grid-row:2}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.admin{grid-column:2;grid-row:2}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.aids{grid-column:1;grid-row:3}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.chemical{grid-column:2;grid-row:3}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.ece{grid-column:1;grid-row:4}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.eee{grid-column:2;grid-row:4}
+  #ptu-map-canvas.ptu-campus-map .ptu-node.mech{grid-column:1 / span 2;grid-row:5;width:calc(50% - 5px);justify-self:center}
+}
